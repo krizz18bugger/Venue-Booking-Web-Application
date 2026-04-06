@@ -1,0 +1,80 @@
+export const mockData = {
+  halls: [
+    {
+      id: "h1",
+      name: "Grand Orchid Banquet",
+      location: "Downtown, Metro City",
+      seatingCapacity: 500,
+      diningCapacity: 300,
+      ac: true,
+      rating: 4.8,
+      pricePerDay: 45000,
+      image: "https://images.unsplash.com/photo-1519167758481-8353/halls",
+    },
+    {
+      id: "h2",
+      name: "Silver Crown Hall",
+      location: "Westside, Metro City",
+      seatingCapacity: 300,
+      diningCapacity: 200,
+      ac: true,
+      rating: 4.5,
+      pricePerDay: 30000,
+      image: "https://images.unsplash.com/photo-1522798514-97ce18c7f",
+    },
+    {
+      id: "h3",
+      name: "Heritage Open Grounds",
+      location: "Eastville, Metro City",
+      seatingCapacity: 1500,
+      diningCapacity: 1000,
+      ac: false,
+      rating: 4.2,
+      pricePerDay: 80000,
+      image: "https://images.unsplash.com/photo-1542665952-64f3d1b8",
+    },
+  ],
+  reviews: [
+    { id: "r1", userName: "Rahul Sharma", rating: 5, comment: "Amazing hall with great central AC.", date: "2023-10-15" },
+    { id: "r2", userName: "Priya Singh", rating: 4, comment: "Good space, but parking was slightly congested.", date: "2023-09-22" },
+    { id: "r3", userName: "Amit Kumar", rating: 5, comment: "Perfect for our corporate event.", date: "2023-11-02" },
+  ],
+  bookings: [
+    { id: "B-1001", customerName: "Rajesh Khanna", hallName: "Grand Orchid Banquet", date: "2023-12-10", status: "Completed", amount: 45000 },
+    { id: "B-1002", customerName: "Meera Patel", hallName: "Silver Crown Hall", date: "2023-12-15", status: "Cancelled", amount: 30000 },
+    { id: "B-1003", customerName: "Sunil Shetty", hallName: "Heritage Open Grounds", date: "2023-12-20", status: "Completed", amount: 80000 },
+    { id: "B-1004", customerName: "Kavita Reddy", hallName: "Grand Orchid Banquet", date: "2023-12-22", status: "Completed", amount: 45000 },
+    { id: "B-1005", customerName: "Arun Verma", hallName: "Silver Crown Hall", date: "2023-12-25", status: "Completed", amount: 30000 },
+  ],
+  revenueData: [
+    { name: "Jan", total: 120000 },
+    { name: "Feb", total: 150000 },
+    { name: "Mar", total: 180000 },
+    { name: "Apr", total: 140000 },
+    { name: "May", total: 200000 },
+    { name: "Jun", total: 250000 },
+    { name: "Jul", total: 220000 },
+    { name: "Aug", total: 300000 },
+    { name: "Sep", total: 280000 },
+    { name: "Oct", total: 350000 },
+    { name: "Nov", total: 400000 },
+    { name: "Dec", total: 450000 },
+  ],
+  hallRevenue: [
+    { name: "Grand Orchid", revenue: 2100000 },
+    { name: "Silver Crown", revenue: 1400000 },
+    { name: "Heritage", revenue: 900000 },
+  ],
+  notifications: {
+    requests: [
+      { id: "n1", title: "New Booking Request", description: "Rahul wants to book Grand Orchid on Jan 14.", timestamp: "10 mins ago", status: "Pending" },
+      { id: "n2", title: "New Inquiry", description: "Pricing inquiry for Heritage Grounds.", timestamp: "2 hours ago", status: "New" },
+    ],
+    cancellations: [
+      { id: "n3", title: "Booking Cancelled", description: "Meera cancelled B-1002 due to emergency.", timestamp: "1 day ago", status: "Refund Pending" },
+    ],
+    payments: [
+      { id: "n4", title: "Payment Received", description: "₹45,000 received for B-1001.", timestamp: "5 hours ago", status: "Success" },
+    ],
+  }
+};
