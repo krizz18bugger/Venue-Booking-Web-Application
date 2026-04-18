@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ownerAPI } from '../services/api';
+import { ownerAPI, customerAPI } from '../services/api';
 
 const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {
   const storedUser = localStorage.getItem('user');
-  const [user, setUser] = useState(storedUser ? JSON.parse(storedUser) : null);
-  const [profile, setProfile] = useState(null);
-  const [halls, setHalls] = useState([]);
+  const [user,           setUser]           = useState(storedUser ? JSON.parse(storedUser) : null);
+  const [profile,        setProfile]        = useState(null);
+  const [halls,          setHalls]          = useState([]);
   const [loadingProfile, setLoadingProfile] = useState(false);
 
   const login = (token, userData) => {
@@ -28,8 +28,14 @@ export const AppProvider = ({ children }) => {
     if (!user) return;
     setLoadingProfile(true);
     try {
-      const res = await ownerAPI.getProfile();
-      setProfile(res.data.data);
+      if (user.role === 'owner') {
+        const res = await ownerAPI.getProfile();
+        setProfile(res.data.data);
+      } else if (user.role === 'customer') {
+        const res = await customerAPI.getProfile();
+        setProfile(res.data.data);
+      }
+      // admin has no separate profile endpoint yet
     } catch (err) {
       console.error('Failed to load profile', err);
     } finally {
@@ -39,12 +45,12 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) fetchProfile();
-  }, [user]);
+  }, [user?.id]);
 
   return (
     <AppContext.Provider value={{
       user, login, logout,
-      profile, fetchProfile, loadingProfile,
+      profile, setProfile, fetchProfile, loadingProfile,
       halls, setHalls,
     }}>
       {children}

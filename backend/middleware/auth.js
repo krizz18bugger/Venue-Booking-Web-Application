@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 dotenv.config();
 
+// ─── Protect: any authenticated user ─────────────────────────
 export const protect = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -17,9 +18,30 @@ export const protect = (req, res, next) => {
   }
 };
 
+// ─── Role Guards ──────────────────────────────────────────────
 export const ownerOnly = (req, res, next) => {
   if (req.user?.role !== 'owner') {
     return res.status(403).json({ success: false, message: 'Forbidden: Owner access only' });
   }
+  next();
+};
+
+export const adminOnly = (req, res, next) => {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Forbidden: Admin access only' });
+  }
+  next();
+};
+
+export const customerOnly = (req, res, next) => {
+  if (req.user?.role !== 'customer') {
+    return res.status(403).json({ success: false, message: 'Forbidden: Customer access only' });
+  }
+  next();
+};
+
+// ─── Authenticated (any role) ─────────────────────────────────
+export const authenticated = (req, res, next) => {
+  // Already handled by protect; this is an alias for clarity
   next();
 };
