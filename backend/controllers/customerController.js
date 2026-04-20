@@ -211,13 +211,14 @@ export const createCustomerBooking = async (req, res) => {
     if (conflict.rows.length > 0)
       return res.status(409).json({ success: false, message: 'This date is already booked' });
 
-    // Get hall price
-    const hall = await query(`SELECT price FROM halls WHERE id=$1 AND is_active=true`, [hall_id]);
+    // Get hall price & owner
+    const hall = await query(`SELECT price, owner_id FROM halls WHERE id=$1 AND is_active=true`, [hall_id]);
     if (!hall.rows.length) return res.status(404).json({ success: false, message: 'Venue not found' });
 
     const amount = hall.rows[0].price;
+    const owner_id = hall.rows[0].owner_id;
     const txStatus = payment_method === 'online' ? 'Success' : 'Pending';
-    const bookingStatus = payment_method === 'online' ? 'Confirmed' : 'Pending';
+    const bookingStatus = 'Pending'; // Always pending until owner approves
 
     // Insert booking
     const booking = await query(`
@@ -239,6 +240,12 @@ export const createCustomerBooking = async (req, res) => {
       INSERT INTO availability (hall_id, date, status) VALUES ($1,$2,'Booked')
       ON CONFLICT (hall_id, date) DO UPDATE SET status='Booked'
     `, [hall_id, date]);
+
+    // Insert notification for the hall owner
+    await query(`
+      INSERT INTO notifications (user_id, type, title, message, status, booking_id)
+      VALUES ($1, 'booking_request', 'New Booking Request', 'You have a new booking request for your hall.', 'Pending', $2)
+    `, [owner_id, bookingId]);
 
     res.status(201).json({ success: true, data: booking.rows[0] });
   } catch (err) {

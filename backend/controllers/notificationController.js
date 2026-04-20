@@ -52,7 +52,10 @@ export const declineBookingRequest = async (req, res) => {
 
     const bookingId = notif.rows[0].booking_id;
     if (bookingId) {
-      await query(`UPDATE bookings SET status = 'Cancelled' WHERE id = $1`, [bookingId]);
+      const booking = await query(`UPDATE bookings SET status = 'Cancelled' WHERE id = $1 RETURNING hall_id, date`, [bookingId]);
+      if (booking.rows.length > 0) {
+         await query(`UPDATE availability SET status = 'Available' WHERE hall_id = $1 AND date = $2`, [booking.rows[0].hall_id, booking.rows[0].date]);
+      }
     }
     res.json({ success: true, message: 'Booking request declined' });
   } catch (err) {

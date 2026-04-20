@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Info, Maximize, Settings, Users, ShieldAlert, CreditCard, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Info, Maximize, Settings, Users, ShieldAlert, CreditCard, FileText, Loader2, ImageIcon, X } from 'lucide-react';
 import { hallsAPI } from '../services/api';
 
 const FEATURES_LIST = [
@@ -25,7 +25,8 @@ const AddHallPage = () => {
     alcohol: 'Not allowed', smoking: 'Not allowed', music: '',
     advancePercent: '30', cancellationPolicy: '',
     agreeTerms: false,
-    tradeLicense: null, fireNoc: null
+    tradeLicense: null, fireNoc: null,
+    images: []
   });
 
   const set = (key, val) => setForm(p => ({ ...p, [key]: val }));
@@ -41,6 +42,17 @@ const AddHallPage = () => {
     }
   };
 
+  const handleImagesChange = (e) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      set('images', [...form.images, ...newFiles]);
+    }
+  };
+
+  const removeImage = (index) => {
+    set('images', form.images.filter((_, i) => i !== index));
+  };
+
   const tabs = [
     { id: 'basic',      label: 'Basic Info',         icon: <Info size={16} /> },
     { id: 'dimensions', label: 'Type & Dimensions',  icon: <Maximize size={16} /> },
@@ -48,6 +60,7 @@ const AddHallPage = () => {
     { id: 'capacity',   label: 'Capacity',           icon: <Users size={16} /> },
     { id: 'rules',      label: 'Rules',              icon: <ShieldAlert size={16} /> },
     { id: 'payment',    label: 'Payment Rules',      icon: <CreditCard size={16} /> },
+    { id: 'images',     label: 'Images',             icon: <ImageIcon size={16} /> },
     { id: 'legal',      label: 'Legal',              icon: <FileText size={16} /> },
   ];
 
@@ -60,28 +73,34 @@ const AddHallPage = () => {
     setSaving(true);
     setError('');
     try {
-      await hallsAPI.create({
-        name: form.name,
-        location: form.location,
-        address: form.address,
-        status: form.status,
-        price: parseFloat(form.price),
-        features: form.selectedFeatures,
-        capacity: {
-          seating: parseInt(form.seating) || 0,
-          dining: parseInt(form.dining) || 0,
-          standing: parseInt(form.standing) || 0,
-        },
-        rules: [
-          form.alcohol && `Alcohol: ${form.alcohol}`,
-          form.smoking && `Smoking: ${form.smoking}`,
-          form.music,
-        ].filter(Boolean),
-        payment_rules: {
-          advance: parseInt(form.advancePercent) || 30,
-          cancellation_policy: form.cancellationPolicy,
-        },
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('location', form.location);
+      formData.append('address', form.address);
+      formData.append('status', form.status);
+      formData.append('price', parseFloat(form.price));
+      formData.append('features', JSON.stringify(form.selectedFeatures));
+      formData.append('capacity', JSON.stringify({
+        seating: parseInt(form.seating) || 0,
+        dining: parseInt(form.dining) || 0,
+        standing: parseInt(form.standing) || 0,
+      }));
+      formData.append('rules', JSON.stringify([
+        form.alcohol && `Alcohol: ${form.alcohol}`,
+        form.smoking && `Smoking: ${form.smoking}`,
+        form.music,
+      ].filter(Boolean)));
+      formData.append('payment_rules', JSON.stringify({
+        advance: parseInt(form.advancePercent) || 30,
+        cancellation_policy: form.cancellationPolicy,
+      }));
+
+      // Append images
+      form.images.forEach((image) => {
+        formData.append('images', image);
       });
+
+      await hallsAPI.create(formData);
       setSuccess(true);
       setTimeout(() => navigate('/halls'), 1500);
     } catch (err) {
@@ -234,6 +253,37 @@ const AddHallPage = () => {
             <textarea className="input h-24 resize-none" placeholder="Describe your cancellation policy..."
               value={form.cancellationPolicy} onChange={e => set('cancellationPolicy', e.target.value)} />
           </div>
+        </div>
+      );
+      case 'images': return (
+        <div className="space-y-6 animate-fade-in max-w-2xl">
+          <div>
+            <label className="label mb-2">Upload Venue Images</label>
+            <label className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center bg-surface-800/50 hover:bg-surface-700/50 transition-colors cursor-pointer block">
+              <input type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp" multiple onChange={handleImagesChange} />
+              <div className="text-brand-400 mb-2 font-medium flex items-center justify-center gap-2">
+                <ImageIcon size={20} /> Click to select images or drag and drop
+              </div>
+              <div className="text-xs text-slate-400">JPG, PNG, WEBP up to 5MB each. You can select multiple files.</div>
+            </label>
+          </div>
+          {form.images.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6">
+              {form.images.map((file, i) => (
+                <div key={i} className="relative group rounded-xl overflow-hidden border border-white/10 bg-surface-800 aspect-video">
+                  <img src={URL.createObjectURL(file)} alt={`Preview ${i}`} className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => removeImage(i)} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-accent-rose">
+                    <X size={14} />
+                  </button>
+                  {i === 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-brand-500/80 text-white text-[10px] uppercase tracking-wider text-center py-1 font-bold">
+                      Primary Image
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
       case 'legal': return (

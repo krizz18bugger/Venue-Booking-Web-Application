@@ -1,4 +1,5 @@
 import express from 'express';
+import multer from 'multer';
 import { protect, ownerOnly } from '../middleware/auth.js';
 import { getOwnerProfile } from '../controllers/hallController.js';
 import { getOwnerHalls, createHall, getHallById, updateHall, updateAvailability, getAvailability } from '../controllers/hallController.js';
@@ -11,6 +12,8 @@ import {
 
 const router = express.Router();
 
+const upload = multer({ storage: multer.memoryStorage() });
+
 // All owner routes require authentication and owner role
 router.use(protect, ownerOnly);
 
@@ -19,9 +22,9 @@ router.get('/profile', getOwnerProfile);
 
 // Halls
 router.get('/halls', getOwnerHalls);
-router.post('/halls', createHall);
+router.post('/halls', upload.array('images', 10), createHall);
 router.get('/halls/:id', getHallById);
-router.patch('/halls/:id', updateHall);
+router.patch('/halls/:id', upload.array('images', 10), updateHall);
 router.get('/halls/:id/availability', getAvailability);
 router.patch('/halls/:id/availability', updateAvailability);
 

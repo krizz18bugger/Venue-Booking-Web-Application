@@ -49,8 +49,12 @@ export const ownerAPI = {
 export const hallsAPI = {
   getAll:             ()         => api.get('/owner/halls'),
   getById:            (id)       => api.get(`/owner/halls/${id}`),
-  create:             (data)     => api.post('/owner/halls', data),
-  update:             (id, data) => api.patch(`/owner/halls/${id}`, data),
+  create:             (data)     => api.post('/owner/halls', data, {
+    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {}
+  }),
+  update:             (id, data) => api.patch(`/owner/halls/${id}`, data, {
+    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {}
+  }),
   getAvailability:    (id)       => api.get(`/owner/halls/${id}/availability`),
   updateAvailability: (id, dates)=> api.patch(`/owner/halls/${id}/availability`, { dates }),
   getReviews:         (id)       => api.get(`/halls/${id}/reviews`),

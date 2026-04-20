@@ -1,4 +1,46 @@
 import { query } from '../config/db.js';
+import supabase from '../config/supabase.js';
+import { v4 as uuidv4 } from 'uuid';
+
+// Helper to parse JSON from FormData if needed
+const parseJSON = (data, fallback) => {
+  if (typeof data === 'string') {
+    try { return JSON.parse(data); } catch (e) { return fallback; }
+  }
+  return data || fallback;
+};
+
+// Helper to upload images to Supabase
+const uploadImagesToSupabase = async (hallId, files) => {
+  if (!files || files.length === 0) return [];
+  
+  const uploadedUrls = [];
+  for (const file of files) {
+    const fileExt = file.originalname.split('.').pop();
+    const fileName = `${hallId}/${uuidv4()}.${fileExt}`;
+    
+    const { data, error } = await supabase.storage
+      .from('hall_images')
+      .upload(fileName, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false
+      });
+      
+    if (error) {
+      console.error('Supabase upload error:', error);
+      continue;
+    }
+    
+    const { data: publicUrlData } = supabase.storage
+      .from('hall_images')
+      .getPublicUrl(fileName);
+      
+    if (publicUrlData) {
+      uploadedUrls.push(publicUrlData.publicUrl);
+    }
+  }
+  return uploadedUrls;
+};
 
 // GET /api/owner/profile
 export const getOwnerProfile = async (req, res) => {
@@ -37,10 +79,16 @@ export const getOwnerHalls = async (req, res) => {
 
 // POST /api/owner/halls
 export const createHall = async (req, res) => {
-  const { name, location, address, status, price, features, capacity, rules, payment_rules } = req.body;
+  const { name, location, address, status, price } = req.body;
+  const features = parseJSON(req.body.features, []);
+  const capacity = parseJSON(req.body.capacity, {});
+  const rules = parseJSON(req.body.rules, []);
+  const payment_rules = parseJSON(req.body.payment_rules, {});
+  
   if (!name || !location || !price) {
     return res.status(400).json({ success: false, message: 'Name, location, and price are required' });
   }
+  
   try {
     const hallResult = await query(
       `INSERT INTO halls (owner_id, name, location, address, status, price)
@@ -48,12 +96,25 @@ export const createHall = async (req, res) => {
       [req.user.id, name, location, address || '', status || 'Active', price]
     );
     const hall = hallResult.rows[0];
+    
     // Insert hall details
     await query(
       `INSERT INTO hall_details (hall_id, features, capacity, rules, payment_rules)
        VALUES ($1, $2, $3, $4, $5)`,
-      [hall.id, JSON.stringify(features || []), JSON.stringify(capacity || {}), JSON.stringify(rules || []), JSON.stringify(payment_rules || {})]
+      [hall.id, JSON.stringify(features), JSON.stringify(capacity), JSON.stringify(rules), JSON.stringify(payment_rules)]
     );
+    
+    // Handle image uploads
+    if (req.files && req.files.length > 0) {
+      const urls = await uploadImagesToSupabase(hall.id, req.files);
+      for (let i = 0; i < urls.length; i++) {
+        await query(
+          `INSERT INTO hall_images (hall_id, image_url, is_primary) VALUES ($1, $2, $3)`,
+          [hall.id, urls[i], i === 0]
+        );
+      }
+    }
+    
     res.status(201).json({ success: true, data: hall, message: 'Hall created successfully' });
   } catch (err) {
     console.error(err);
@@ -92,7 +153,12 @@ export const getHallById = async (req, res) => {
 
 // PATCH /api/owner/halls/:id
 export const updateHall = async (req, res) => {
-  const { name, location, address, status, price, features, capacity, rules, payment_rules } = req.body;
+  const { name, location, address, status, price } = req.body;
+  const features = parseJSON(req.body.features, []);
+  const capacity = parseJSON(req.body.capacity, {});
+  const rules = parseJSON(req.body.rules, []);
+  const payment_rules = parseJSON(req.body.payment_rules, {});
+  
   try {
     const result = await query(
       `UPDATE halls SET name=$1, location=$2, address=$3, status=$4, price=$5
@@ -100,11 +166,29 @@ export const updateHall = async (req, res) => {
       [name, location, address, status, price, req.params.id, req.user.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Hall not found' });
+    
     // Update hall details
     await query(
       `UPDATE hall_details SET features=$1, capacity=$2, rules=$3, payment_rules=$4 WHERE hall_id=$5`,
-      [JSON.stringify(features || []), JSON.stringify(capacity || {}), JSON.stringify(rules || []), JSON.stringify(payment_rules || {}), req.params.id]
+      [JSON.stringify(features), JSON.stringify(capacity), JSON.stringify(rules), JSON.stringify(payment_rules), req.params.id]
     );
+    
+    // Handle image uploads
+    if (req.files && req.files.length > 0) {
+      const urls = await uploadImagesToSupabase(req.params.id, req.files);
+      
+      // If there were no previous images, make the first one primary
+      const existingImages = await query('SELECT id FROM hall_images WHERE hall_id = $1 LIMIT 1', [req.params.id]);
+      const hasExistingImages = existingImages.rows.length > 0;
+      
+      for (let i = 0; i < urls.length; i++) {
+        await query(
+          `INSERT INTO hall_images (hall_id, image_url, is_primary) VALUES ($1, $2, $3)`,
+          [req.params.id, urls[i], !hasExistingImages && i === 0]
+        );
+      }
+    }
+    
     res.json({ success: true, data: result.rows[0], message: 'Hall updated successfully' });
   } catch (err) {
     console.error(err);

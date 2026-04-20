@@ -66,26 +66,34 @@ export default function BookingConfirmPage() {
         </div>
 
         {/* Venue Summary */}
-        <div className="card p-5">
-          <h2 className="text-base font-bold text-white mb-4">Booking Summary</h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 flex items-center gap-2"><MapPin size={14}/> Venue</span>
-              <span className="text-white font-semibold">{venue.name}</span>
+        <div className="card overflow-hidden">
+          {venue.primary_image && (
+            <div className="w-full h-40 bg-surface-600 relative">
+              <img src={venue.primary_image} alt={venue.name} className="w-full h-full object-cover"/>
+              <div className="absolute inset-0 bg-gradient-to-t from-surface-800 to-transparent"/>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 flex items-center gap-2"><MapPin size={14}/> Location</span>
-              <span className="text-white">{venue.location}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 flex items-center gap-2"><CalendarDays size={14}/> Event Date</span>
-              <span className="text-white font-semibold">{fmtDate(date)}</span>
-            </div>
-            <div className="flex justify-between items-center border-t border-white/10 pt-3 mt-2">
-              <span className="text-white font-semibold">Total Amount</span>
-              <span className="text-accent-emerald font-extrabold text-lg flex items-center gap-1">
-                <IndianRupee size={16}/>{Number(venue.price).toLocaleString('en-IN')}
-              </span>
+          )}
+          <div className="p-5">
+            <h2 className="text-base font-bold text-white mb-4">Booking Summary</h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 flex items-center gap-2"><MapPin size={14}/> Venue</span>
+                <span className="text-white font-semibold">{venue.name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 flex items-center gap-2"><MapPin size={14}/> Location</span>
+                <span className="text-white">{venue.location}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 flex items-center gap-2"><CalendarDays size={14}/> Event Date</span>
+                <span className="text-white font-semibold">{fmtDate(date)}</span>
+              </div>
+              <div className="flex justify-between items-center border-t border-white/10 pt-3 mt-2">
+                <span className="text-white font-semibold">Total Amount</span>
+                <span className="text-accent-emerald font-extrabold text-lg flex items-center gap-1">
+                  <IndianRupee size={16}/>{Number(venue.price).toLocaleString('en-IN')}
+                </span>
+              </div>
             </div>
           </div>
         </div>
